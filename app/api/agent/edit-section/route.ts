@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { runEditorAgent } from '@/lib/agents/editor';
 import { AgentError } from '@/lib/gemini';
 import { EditSectionRequest } from '@/types/api';
-import { verifyIdToken, AuthError } from '@/lib/firebase/verifyToken';
+import { verifySessionToken, AuthError } from '@/lib/firebase/verifyToken';
 import { checkRateLimit } from '@/lib/rateLimit';
 import { getReport, updateReport } from '@/lib/firebase/firestore';
 
@@ -11,7 +11,7 @@ export const maxDuration = 60; // 60 seconds timeout
 export async function POST(req: NextRequest) {
   let uid: string;
   try {
-    const verified = await verifyIdToken(req.headers.get('Authorization'));
+    const verified = await verifySessionToken();
     uid = verified.uid;
   } catch (err) {
     if (err instanceof AuthError) {

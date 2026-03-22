@@ -1,12 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { generatePdf } from '@/lib/export/pdf';
-import { verifyIdToken, AuthError } from '@/lib/firebase/verifyToken';
+import { verifySessionToken, AuthError } from '@/lib/firebase/verifyToken';
 import { getReport } from '@/lib/firebase/firestore';
 
 export async function POST(req: NextRequest) {
   let uid: string;
   try {
-    const verified = await verifyIdToken(req.headers.get('Authorization'));
+    const verified = await verifySessionToken();
     uid = verified.uid;
   } catch (err) {
     if (err instanceof AuthError) {

@@ -6,7 +6,7 @@ import { validateProblemStatement } from '@/lib/validators';
 import { AgentError } from '@/lib/gemini';
 import { PlanRequest } from '@/types/api';
 import { Report } from '@/types/report';
-import { verifyIdToken, AuthError } from '@/lib/firebase/verifyToken';
+import { verifySessionToken, AuthError } from '@/lib/firebase/verifyToken';
 import { saveReport, incrementPlanCount } from '@/lib/firebase/firestore';
 import { checkRateLimit } from '@/lib/rateLimit';
 
@@ -15,7 +15,7 @@ export const maxDuration = 60; // 60 seconds timeout
 export async function POST(req: NextRequest) {
   let uid: string;
   try {
-    const verified = await verifyIdToken(req.headers.get('Authorization'));
+    const verified = await verifySessionToken();
     uid = verified.uid;
   } catch (err) {
     if (err instanceof AuthError) {

@@ -1,11 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { verifyIdToken, AuthError } from '@/lib/firebase/verifyToken';
+import { verifySessionToken, AuthError } from '@/lib/firebase/verifyToken';
 import { getReport, deleteReport } from '@/lib/firebase/firestore';
 
 export async function GET(req: NextRequest, { params }: { params: Promise<{ reportId: string }> }) {
   let uid: string;
   try {
-    const verified = await verifyIdToken(req.headers.get('Authorization'));
+    const verified = await verifySessionToken();
     uid = verified.uid;
   } catch(err) {
     if (err instanceof AuthError) {
@@ -28,7 +28,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ repo
 export async function DELETE(req: NextRequest, { params }: { params: Promise<{ reportId: string }> }) {
   let uid: string;
   try {
-    const verified = await verifyIdToken(req.headers.get('Authorization'));
+    const verified = await verifySessionToken();
     uid = verified.uid;
   } catch(err) {
     if (err instanceof AuthError) {

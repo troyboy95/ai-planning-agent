@@ -24,6 +24,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (firebaseUser) {
         const token = await firebaseUser.getIdToken();
         setIdToken(token);
+        await fetch('/api/auth/session', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ idToken: token }),
+        });
       } else {
         setIdToken(null);
       }
@@ -37,12 +42,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const interval = setInterval(async () => {
       const token = await user.getIdToken(true);
       setIdToken(token);
+      await fetch('/api/auth/session', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ idToken: token }),
+      });
     }, 50 * 60 * 1000);
     return () => clearInterval(interval);
   }, [user]);
 
+  const handleSignOut = async () => {
+    await fetch('/api/auth/logout', { method: 'POST' });
+    await fbSignOut();
+  };
+
   return (
-    <AuthContext.Provider value={{ user, loading, idToken, signOut: () => fbSignOut() }}>
+    <AuthContext.Provider value={{ user, loading, idToken, signOut: handleSignOut }}>
       {children}
     </AuthContext.Provider>
   );

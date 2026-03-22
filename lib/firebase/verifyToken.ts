@@ -1,5 +1,6 @@
 import { adminAuth } from './admin';
 import { DecodedIdToken } from 'firebase-admin/auth';
+import { cookies } from 'next/headers';
 
 export interface VerifiedToken {
   uid:   string;
@@ -14,24 +15,25 @@ export class AuthError extends Error {
   }
 }
 
-export async function verifyIdToken(authHeader: string | null): Promise<VerifiedToken> {
-  if (!authHeader?.startsWith('Bearer ')) {
-    throw new AuthError('Missing or malformed Authorization header', 401);
-  }
+export async function verifySessionToken(): Promise<VerifiedToken> {
+  const cookieStore = await cookies();
+  const sessionCookie = cookieStore.get('session')?.value;
 
-  const token = authHeader.slice(7);
+  if (!sessionCookie) {
+    throw new AuthError('Missing session cookie', 401);
+  }
 
   let decoded: DecodedIdToken;
   try {
-    decoded = await adminAuth.verifyIdToken(token, true); 
+    decoded = await adminAuth.verifySessionCookie(sessionCookie, true); 
   } catch (err: any) {
-    if (err.code === 'auth/id-token-revoked') {
-      throw new AuthError('Token has been revoked. Please sign in again.', 401);
+    if (err.code === 'auth/session-cookie-revoked') {
+      throw new AuthError('Session revoked. Please sign in again.', 401);
     }
-    if (err.code === 'auth/id-token-expired') {
-      throw new AuthError('Token expired. Please sign in again.', 401);
+    if (err.code === 'auth/session-cookie-expired') {
+      throw new AuthError('Session expired. Please sign in again.', 401);
     }
-    throw new AuthError('Invalid authentication token.', 401);
+    throw new AuthError('Invalid session.', 401);
   }
 
   return {

@@ -3,6 +3,7 @@ import { AgentStatus, ProgressState } from '@/app/plan/new/page';
 import { Report } from '@/types/report';
 import { FileDown, PlusCircle, CheckCircle2, ChevronRight, Download } from 'lucide-react';
 import { authenticatedFetch } from '@/lib/apiClient';
+import Link from 'next/link';
 
 export function Sidebar({
   report,
@@ -51,12 +52,14 @@ export function Sidebar({
 
   return (
     <div className="flex flex-col h-full gap-6">
-      <div className="flex items-center gap-2 px-2">
-        <div className="w-8 h-8 rounded bg-primary text-white flex items-center justify-center font-bold">
-          A
+      <Link href="/dashboard">
+        <div className="flex items-center gap-2 px-2">
+          <div className="w-8 h-8 rounded bg-primary text-white flex items-center justify-center font-bold">
+            A
+          </div>
+          <span className="font-semibold text-gray-900 tracking-tight">AI Planning Agent</span>
         </div>
-        <span className="font-semibold text-gray-900 tracking-tight">AI Planning Agent</span>
-      </div>
+      </Link>
 
       <button
         onClick={onNewReport}

@@ -74,10 +74,10 @@ export async function generateDocx(report: Report): Promise<Buffer> {
       const tableRows = [
         new TableRow({
           children: [
-            new TableCell({ children: [new Paragraph({ text: "Name", bold: true })] }),
-            new TableCell({ children: [new Paragraph({ text: "Role", bold: true })] }),
-            new TableCell({ children: [new Paragraph({ text: "Concern", bold: true })] }),
-            new TableCell({ children: [new Paragraph({ text: "Influence", bold: true })] })
+            new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: "Name", bold: true })] })] }),
+            new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: "Role", bold: true })] })] }),
+            new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: "Concern", bold: true })] })] }),
+            new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: "Influence", bold: true })] })] })
           ]
         }),
         ...data.map(st => new TableRow({
@@ -108,7 +108,7 @@ export async function generateDocx(report: Report): Promise<Buffer> {
           spacing: { after: 100 }
         }));
         children.push(new Paragraph({ text: st.description, spacing: { after: 100 } }));
-        children.push(new Paragraph({ text: `Rationale: ${st.rationale}`, italics: true, spacing: { after: 200 } }));
+        children.push(new Paragraph({ children: [new TextRun({ text: `Rationale: ${st.rationale}`, italics: true })], spacing: { after: 200 } }));
       });
 
       children.push(new Paragraph({ text: "Tradeoffs", heading: HeadingLevel.HEADING_2, spacing: { after: 200 } }));
@@ -121,7 +121,7 @@ export async function generateDocx(report: Report): Promise<Buffer> {
       const data = s.content as ActionPlanItem[];
       data.forEach(phase => {
         children.push(new Paragraph({ text: phase.phase, heading: HeadingLevel.HEADING_2, spacing: { after: 200 } }));
-        children.push(new Paragraph({ text: `Timeline: ${phase.timeline} | Owner: ${phase.owner}`, italics: true, spacing: { after: 100 } }));
+        children.push(new Paragraph({ children: [new TextRun({ text: `Timeline: ${phase.timeline} | Owner: ${phase.owner}`, italics: true })], spacing: { after: 100 } }));
         children.push(new Paragraph({ text: `Success Metric: ${phase.successMetric}`, spacing: { after: 200 } }));
 
         phase.actions.forEach(a => {
