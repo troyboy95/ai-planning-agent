@@ -1,0 +1,45 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isOwner(uid) {
+      return isAuthenticated() && request.auth.uid == uid;
+    }
+
+    function isValidReport() {
+      let data = request.resource.data;
+      return data.keys().hasAll(['problemStatement', 'userId', 'status'])
+          && data.userId == request.auth.uid
+          && data.problemStatement is string
+          && data.problemStatement.size() > 0
+          && data.problemStatement.size() <= 1000;
+    }
+
+    function isValidReportUpdate() {
+      return request.resource.data.userId == resource.data.userId
+          && request.resource.data.userId == request.auth.uid;
+    }
+
+    match /users/{uid} {
+      allow read:   if isOwner(uid);
+      allow create: if isOwner(uid);
+      allow update: if isOwner(uid) && !request.resource.data.diff(resource.data).affectedKeys().hasAny(['createdAt']);
+      allow delete: if false;
+    }
+
+    match /users/{uid}/reports/{reportId} {
+      allow read:   if isOwner(uid);
+      allow create: if isOwner(uid) && isValidReport();
+      allow update: if isOwner(uid) && isValidReportUpdate();
+      allow delete: if isOwner(uid);
+    }
+
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
