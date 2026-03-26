@@ -7,7 +7,7 @@ export const gemini = new GoogleGenAI({
 
 export class AgentError extends Error {
   constructor(
-    public agent: 'planner' | 'insight' | 'execution' | 'editor',
+    public agent: 'moderator' | 'planner' | 'insight' | 'execution' | 'editor',
     message: string
   ) {
     super(message);

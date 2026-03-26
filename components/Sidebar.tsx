@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { AgentStatus, ProgressState } from '@/app/plan/new/page';
 import { Report } from '@/types/report';
-import { FileDown, PlusCircle, CheckCircle2, ChevronRight, Download } from 'lucide-react';
+import { FileDown, PlusCircle, CheckCircle2, ChevronRight, Download, X } from 'lucide-react';
 import { authenticatedFetch } from '@/lib/apiClient';
 import Link from 'next/link';
 
@@ -9,12 +9,14 @@ export function Sidebar({
   report,
   status,
   progress,
-  onNewReport
+  onNewReport,
+  onClose
 }: {
   report: Report | null,
   status: AgentStatus,
   progress: ProgressState,
-  onNewReport: () => void
+  onNewReport: () => void,
+  onClose?: () => void
 }) {
   const [exportingDoc, setExportingDoc] = useState(false);
   const [exportingPdf, setExportingPdf] = useState(false);
@@ -52,14 +54,21 @@ export function Sidebar({
 
   return (
     <div className="flex flex-col h-full gap-6">
-      <Link href="/dashboard">
-        <div className="flex items-center gap-2 px-2">
-          <div className="w-8 h-8 rounded bg-primary text-white flex items-center justify-center font-bold">
-            A
+      <div className="flex items-center justify-between px-2">
+        <Link href="/dashboard">
+          <div className="flex items-center gap-2">
+            <div className="w-8 h-8 rounded bg-primary text-white flex items-center justify-center font-bold">
+              A
+            </div>
+            <span className="font-semibold text-gray-900 tracking-tight">AI Planning Agent</span>
           </div>
-          <span className="font-semibold text-gray-900 tracking-tight">AI Planning Agent</span>
-        </div>
-      </Link>
+        </Link>
+        {onClose && (
+          <button onClick={onClose} className="p-1 rounded-md text-gray-500 hover:bg-gray-200 transition-colors lg:hidden">
+            <X className="w-5 h-5" />
+          </button>
+        )}
+      </div>
 
       <button
         onClick={onNewReport}

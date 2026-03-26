@@ -94,14 +94,14 @@ export function SectionCard({
     <div className="bg-white border rounded-xl shadow-sm relative overflow-hidden transition-all duration-300">
 
       {/* Header */}
-      <div className="border-b px-6 py-4 flex items-center justify-between bg-gray-50/50">
+      <div className="border-b px-4 md:px-6 py-3 md:py-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-gray-50/50">
         <div className="flex items-center gap-3">
-          <div className="w-6 h-6 rounded-full bg-primary/10 text-primary flex items-center justify-center text-xs font-bold leading-none">
+          <div className="w-6 h-6 rounded-full bg-primary/10 text-primary flex items-center justify-center text-xs font-bold leading-none shrink-0">
             {index}
           </div>
-          <h2 className="text-xl font-bold text-gray-900">{section.title}</h2>
+          <h2 className="text-lg md:text-xl font-bold text-gray-900 leading-tight">{section.title}</h2>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 self-start sm:self-auto">
           {section.versions && section.versions.length > 0 && (
             <button
               onClick={() => setShowHistory(!showHistory)}
@@ -145,7 +145,7 @@ export function SectionCard({
 
       {/* Editor Panel */}
       {isEditing && (
-        <div className="bg-[#1E1E3F]/5 border-b p-6 space-y-4 animate-fade-in relative">
+        <div className="bg-[#1E1E3F]/5 border-b p-4 md:p-6 space-y-4 animate-fade-in relative">
 
           {!draftContent ? (
             <>
@@ -239,12 +239,12 @@ function RenderSectionContent({ id, content }: { id: string, content: any }) {
     case 'problem-breakdown': {
       const data = content as ProblemBreakdown;
       return (
-        <div className="space-y-6">
-          <p className="text-gray-700 leading-relaxed text-[15px]">{data.summary}</p>
+        <div className="space-y-4 md:space-y-6">
+          <p className="text-gray-700 leading-relaxed text-sm md:text-[15px]">{data.summary}</p>
 
           <div>
-            <h3 className="text-lg font-semibold text-gray-900 mb-3">Core Components</h3>
-            <ul className="space-y-3">
+            <h3 className="text-base md:text-lg font-semibold text-gray-900 mb-2 md:mb-3">Core Components</h3>
+            <ul className="space-y-2 md:space-y-3">
               {data.components.map((c, i) => (
                 <li key={i} className="flex items-start gap-3">
                   <span className="w-1.5 h-1.5 rounded-full bg-primary mt-2 shrink-0"></span>
@@ -257,11 +257,11 @@ function RenderSectionContent({ id, content }: { id: string, content: any }) {
             </ul>
           </div>
 
-          <div className="bg-amber-50 border border-amber-200 rounded-lg p-5">
-            <h3 className="text-[15px] font-semibold text-amber-900 mb-2 flex items-center gap-2">
+          <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 md:p-5">
+            <h3 className="text-sm md:text-[15px] font-semibold text-amber-900 mb-2 flex items-center gap-2">
               <span className="text-amber-500">⚠</span> Constraints
             </h3>
-            <ul className="list-disc pl-5 text-amber-800 space-y-1 text-[15px]">
+            <ul className="list-disc pl-5 text-amber-800 space-y-1 text-sm md:text-[15px]">
               {data.constraints.map((c, i) => <li key={i}>{c}</li>)}
             </ul>
           </div>
@@ -284,15 +284,15 @@ function RenderSectionContent({ id, content }: { id: string, content: any }) {
             </thead>
             <tbody className="divide-y">
               {data.map((s, i) => (
-                <tr key={i} className="hover:bg-gray-50/30 transition-colors">
-                  <td className="py-3 px-4 text-[15px] font-medium text-gray-900">{s.name}</td>
-                  <td className="py-3 px-4 text-[15px] text-gray-600">
-                    <span className="inline-block px-2.5 py-1 rounded-full bg-gray-100 text-xs font-medium text-gray-600">
+                <tr key={i} className="hover:bg-gray-50/30 transition-colors block md:table-row pb-4 md:pb-0 mb-4 md:mb-0 border-b md:border-b-0 last:border-0">
+                  <td className="py-2 md:py-3 px-4 text-sm md:text-[15px] font-medium text-gray-900 block md:table-cell">{s.name}</td>
+                  <td className="py-2 md:py-3 px-4 text-sm md:text-[15px] text-gray-600 block md:table-cell">
+                    <span className="inline-block px-2.5 py-1.5 rounded-md bg-gray-100 text-[11px] md:text-xs font-medium text-gray-700 border border-gray-200/60 shadow-sm leading-relaxed">
                       {s.role}
                     </span>
                   </td>
-                  <td className="py-3 px-4 text-[15px] text-gray-600">{s.concern}</td>
-                  <td className="py-3 px-4">
+                  <td className="py-2 md:py-3 px-4 text-sm md:text-[15px] text-gray-600 block md:table-cell">{s.concern}</td>
+                  <td className="py-2 md:py-3 px-4 block md:table-cell">
                     <span className={`inline-flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider
                       ${s.influence === 'high' ? 'text-red-600' : s.influence === 'medium' ? 'text-amber-600' : 'text-green-600'}
                     `}>

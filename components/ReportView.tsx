@@ -38,18 +38,18 @@ export function ReportView({ report, onUpdate }: { report: Report, onUpdate: (r:
   };
 
   return (
-    <div className="max-w-4xl mx-auto space-y-12">
+    <div className="max-w-4xl mx-auto space-y-8 md:space-y-12">
 
-      <div className="border-b pb-8">
-        <h1 className="text-3xl font-bold tracking-tight text-gray-900 mb-4">{report.problemStatement}</h1>
+      <div className="border-b pb-6 md:pb-8">
+        <h1 className="text-2xl md:text-3xl font-bold tracking-tight text-gray-900 mb-3 md:mb-4">{report.problemStatement}</h1>
         <div className="text-sm text-gray-500 flex items-center gap-2">
           <span>Generated {new Date(report.createdAt).toLocaleString()}</span>
         </div>
       </div>
 
-      <div className="space-y-8">
+      <div className="space-y-6 md:space-y-8">
         {report.sections.map((section, idx) => (
-          <div key={section.id} id={section.id} className="scroll-mt-20">
+          <div key={section.id} id={section.id} className="scroll-mt-16 md:scroll-mt-20">
             <SectionCard
               section={section}
               index={idx + 1}
@@ -62,7 +62,7 @@ export function ReportView({ report, onUpdate }: { report: Report, onUpdate: (r:
         ))}
       </div>
 
-      <div className="pt-16">
+      <div className="pt-8 md:pt-16">
         <AgentTrace
           plannerTrace={report.agentTrace?.plannerOutput?.rawPlannerThinking}
           insightTrace={report.agentTrace?.insightOutput?.rawInsightThinking}

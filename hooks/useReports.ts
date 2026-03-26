@@ -13,10 +13,20 @@ export function useReports() {
     if (!user || !idToken) return;
 
     setLoading(true);
+    setError(null);
     authenticatedFetch('/api/reports')
-      .then(res => res.json())
+      .then(async res => {
+        if (!res.ok) {
+          const text = await res.text();
+          throw new Error(text || 'Network response was not ok');
+        }
+        return res.json();
+      })
       .then(data => setReports(data.reports ?? []))
-      .catch(() => setError('Failed to load your reports.'))
+      .catch((err) => {
+        console.error('Fetch reports error:', err);
+        setError('Failed to load your reports.');
+      })
       .finally(() => setLoading(false));
   }, [user, idToken]);
 

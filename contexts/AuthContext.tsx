@@ -20,17 +20,25 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
-      setUser(firebaseUser);
+      setLoading(true);
       if (firebaseUser) {
-        const token = await firebaseUser.getIdToken();
-        setIdToken(token);
-        await fetch('/api/auth/session', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ idToken: token }),
-        });
+        try {
+          const token = await firebaseUser.getIdToken();
+          await fetch('/api/auth/session', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ idToken: token }),
+          });
+          setIdToken(token);
+          setUser(firebaseUser);
+        } catch (error) {
+          console.error('Failed to create session:', error);
+          setIdToken(null);
+          setUser(null);
+        }
       } else {
         setIdToken(null);
+        setUser(null);
       }
       setLoading(false);
     });

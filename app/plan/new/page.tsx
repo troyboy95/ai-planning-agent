@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { Sidebar } from '@/components/Sidebar';
+import { Header } from '@/components/Header';
 import { InputState } from '@/components/InputState';
 import { ReportView } from '@/components/ReportView';
 import { Report } from '@/types/report';
@@ -13,10 +14,12 @@ export type AgentStatus = 'idle' | 'generating' | 'done' | 'error';
 export type StepStatus = 'pending' | 'active' | 'done';
 
 export interface ProgressState {
+  moderator: StepStatus;
   planner: StepStatus;
   insight: StepStatus;
   execution: StepStatus;
   elapsedMs: {
+    moderator?: number;
     planner?: number;
     insight?: number;
     execution?: number;
@@ -29,15 +32,17 @@ export default function NewPlanPage() {
   const [report, setReport] = useState<Report | null>(null);
   const [status, setStatus] = useState<AgentStatus>('idle');
   const [progress, setProgress] = useState<ProgressState>({
+    moderator: 'pending',
     planner: 'pending',
     insight: 'pending',
     execution: 'pending',
     elapsedMs: {}
   });
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const handleGenerate = async (problemStatement: string) => {
     setStatus('generating');
-    setProgress({ planner: 'pending', insight: 'pending', execution: 'pending', elapsedMs: {} });
+    setProgress({ moderator: 'pending', planner: 'pending', insight: 'pending', execution: 'pending', elapsedMs: {} });
     setReport(null);
 
     try {
@@ -87,13 +92,13 @@ export default function NewPlanPage() {
               const data = eventData as any;
               setProgress(prev => ({
                 ...prev,
-                [data.step === 1 ? 'planner' : data.step === 2 ? 'insight' : 'execution']: 'active'
+                [data.step === 0 ? 'moderator' : data.step === 1 ? 'planner' : data.step === 2 ? 'insight' : 'execution']: 'active'
               }));
             } else if (eventType === 'step_complete') {
               const data = eventData as any;
               setProgress(prev => {
                 const nextp = { ...prev };
-                const key = data.step === 1 ? 'planner' : data.step === 2 ? 'insight' : 'execution';
+                const key = data.step === 0 ? 'moderator' : data.step === 1 ? 'planner' : data.step === 2 ? 'insight' : 'execution';
                 nextp[key] = 'done';
                 nextp.elapsedMs = { ...nextp.elapsedMs, [key]: data.duration };
                 return nextp;
@@ -104,7 +109,10 @@ export default function NewPlanPage() {
               router.push(`/plan/${data.report.id}`);
             } else if (eventType === 'error') {
               const data = eventData as any;
-              throw new Error(data.message || 'Agent error');
+              setStatus('error');
+              setProgress(prev => ({ ...prev, error: data.message || 'Agent error' }));
+              done = true;
+              break;
             }
           }
         }
@@ -119,7 +127,30 @@ export default function NewPlanPage() {
   return (
     <AuthGuard>
       <div className="flex h-screen w-full overflow-hidden bg-white">
-        <div className="hidden md:flex flex-col w-[300px] border-r bg-[#F9FAFB] p-4 shrink-0">
+        
+        {/* Mobile Sidebar Overlay */}
+        {mobileMenuOpen && (
+          <div className="fixed inset-0 z-50 flex lg:hidden">
+            <div className="fixed inset-0 bg-gray-900/80 transition-opacity" onClick={() => setMobileMenuOpen(false)} />
+            <div className="relative flex w-[280px] max-w-sm flex-col overflow-y-auto bg-[#F9FAFB] p-4 shadow-xl">
+              <Sidebar
+                report={report}
+                status={status}
+                progress={progress}
+                onNewReport={() => {
+                  setReport(null);
+                  setStatus('idle');
+                  setProgress({ moderator: 'pending', planner: 'pending', insight: 'pending', execution: 'pending', elapsedMs: {} });
+                  setMobileMenuOpen(false);
+                }}
+                onClose={() => setMobileMenuOpen(false)}
+              />
+            </div>
+          </div>
+        )}
+
+        {/* Desktop Sidebar */}
+        <div className="hidden lg:flex flex-col w-[280px] border-r bg-[#F9FAFB] p-4 shrink-0 overflow-y-auto">
           <Sidebar
             report={report}
             status={status}
@@ -127,25 +158,15 @@ export default function NewPlanPage() {
             onNewReport={() => {
               setReport(null);
               setStatus('idle');
-              setProgress({ planner: 'pending', insight: 'pending', execution: 'pending', elapsedMs: {} });
+              setProgress({ moderator: 'pending', planner: 'pending', insight: 'pending', execution: 'pending', elapsedMs: {} });
             }}
           />
         </div>
 
-        <div className="flex-1 flex flex-col h-full overflow-y-auto relative scroll-smooth">
-          <div className="md:hidden flex items-center justify-between p-4 border-b bg-white sticky z-10 top-0">
-            <div className="font-bold text-lg text-primary">AI Agent</div>
-            {report && (
-              <button
-                onClick={() => { setReport(null); setStatus('idle'); }}
-                className="text-sm bg-gray-100 px-3 py-1 rounded"
-              >
-                New
-              </button>
-            )}
-          </div>
-
-          <div className="flex-1 max-w-4xl w-full mx-auto p-4 md:p-8">
+        {/* Main Content */}
+        <div className="flex-1 flex flex-col h-full overflow-y-auto relative scroll-smooth bg-white">
+          <Header showMenuButton onMenuClick={() => setMobileMenuOpen(true)} />
+            <div className="flex-1 max-w-4xl w-full mx-auto p-4 sm:p-6 lg:p-8">
             {status === 'idle' && (
               <div className="h-full flex flex-col justify-center animate-fade-in pb-20">
                 <InputState onSubmit={handleGenerate} />
@@ -159,6 +180,11 @@ export default function NewPlanPage() {
                   <p className="text-gray-500">Our agents are decomposing your request and building a tailored execution plan.</p>
                 </div>
                 <div className="w-full bg-white border rounded-xl shadow-sm p-6 space-y-4">
+                  <Step
+                    title="Step 0: Safety Check — Analyzing request intent"
+                    status={progress.moderator}
+                    ms={progress.elapsedMs.moderator}
+                  />
                   <Step
                     title="Step 1: Planner Agent — Decomposing your problem"
                     status={progress.planner}

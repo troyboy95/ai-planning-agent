@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { runModeratorAgent } from '@/lib/agents/moderator';
 import { runPlannerAgent } from '@/lib/agents/planner';
 import { runInsightAgent } from '@/lib/agents/insight';
 import { runExecutionAgent } from '@/lib/agents/execution';
@@ -50,6 +51,17 @@ export async function POST(req: NextRequest) {
         };
 
         try {
+          // Moderation Phase
+          sendEvent('step_start', { step: 0, name: 'Moderator Agent' });
+          const moderatorStart = Date.now();
+          const moderationResult = await runModeratorAgent(body.problemStatement);
+          sendEvent('step_complete', { step: 0, duration: Date.now() - moderatorStart });
+
+          if (!moderationResult.safe) {
+            throw new AgentError('moderator', moderationResult.reason);
+          }
+
+          // Planner Phase
           sendEvent('step_start', { step: 1, name: 'Planner Agent' });
           const plannerStart = Date.now();
           const plannerOutput = await runPlannerAgent(body.problemStatement);
