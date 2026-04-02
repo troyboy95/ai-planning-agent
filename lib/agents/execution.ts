@@ -40,8 +40,8 @@ Generate the final structured report matching the requested JSON schema.`,
 
     const parsed = safeParseJSON<RawExecutionOutput>(raw);
     
-    if (!parsed || !parsed.sections) {
-      throw new AgentError('execution', 'Invalid JSON response from AI');
+    if (!parsed || !Array.isArray(parsed.sections) || parsed.sections.length === 0) {
+      throw new AgentError('execution', 'Invalid or empty sections in AI response');
     }
     
     return parsed;

@@ -76,6 +76,17 @@ export async function POST(req: NextRequest) {
           const executionStart = Date.now();
           const executionOutput = await runExecutionAgent(body.problemStatement, plannerOutput, insightOutput);
 
+          // Validate that each section has the required 'id' field.
+          // The AI can occasionally return sections without IDs (hallucination / truncated JSON).
+          // A corrupt report here would crash the frontend with "Cannot read properties of undefined".
+          if (!Array.isArray(executionOutput.sections) || executionOutput.sections.length === 0) {
+            throw new AgentError('execution', 'Execution agent returned no report sections. Please try again.');
+          }
+          const invalidSection = executionOutput.sections.find(s => !s.id || typeof s.id !== 'string');
+          if (invalidSection) {
+            throw new AgentError('execution', 'Execution agent returned a section without a valid ID. Please try again.');
+          }
+
           const report: Report = {
             id: crypto.randomUUID(),
             problemStatement: body.problemStatement,

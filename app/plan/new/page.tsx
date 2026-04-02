@@ -61,59 +61,89 @@ export default function NewPlanPage() {
 
       const reader = response.body.getReader();
       const decoder = new TextDecoder();
-      let done = false;
+      let streamDone = false;
+      // Buffer accumulates partial SSE data across read() boundaries.
+      // In production (Vercel edge / CDN), TCP packets don't align with
+      // SSE \n\n event boundaries, so we MUST buffer and only process
+      // complete events to avoid crashing on partial data.
+      let buffer = '';
 
-      while (!done) {
+      const processEvent = (ev: string) => {
+        const lines = ev.split('\n');
+        let eventType = '';
+        let eventData: any = undefined;
+
+        for (const l of lines) {
+          if (l.startsWith('event: ')) {
+            eventType = l.slice('event: '.length).trim();
+          } else if (l.startsWith('data: ')) {
+            const dataStr = l.slice('data: '.length);
+            try {
+              eventData = JSON.parse(dataStr);
+            } catch {
+              eventData = dataStr;
+            }
+          }
+        }
+
+        if (!eventType || eventData === undefined) return false; // incomplete, skip
+
+        if (eventType === 'step_start') {
+          const data = eventData;
+          setProgress(prev => ({
+            ...prev,
+            [data.step === 0 ? 'moderator' : data.step === 1 ? 'planner' : data.step === 2 ? 'insight' : 'execution']: 'active'
+          }));
+        } else if (eventType === 'step_complete') {
+          const data = eventData;
+          setProgress(prev => {
+            const nextp = { ...prev };
+            const key = data.step === 0 ? 'moderator' : data.step === 1 ? 'planner' : data.step === 2 ? 'insight' : 'execution';
+            nextp[key] = 'done';
+            nextp.elapsedMs = { ...nextp.elapsedMs, [key]: data.duration };
+            return nextp;
+          });
+        } else if (eventType === 'done') {
+          const reportId = eventData?.report?.id;
+          if (!reportId) {
+            // Guard: AI returned a done event but report.id is missing
+            console.error('[SSE] done event missing report.id:', eventData);
+            setStatus('error');
+            setProgress(prev => ({ ...prev, error: 'Report was generated but could not be saved. Please try again.' }));
+            return true; // signal stop
+          }
+          setStatus('done');
+          router.push(`/plan/${reportId}`);
+          return true; // signal stop
+        } else if (eventType === 'error') {
+          setStatus('error');
+          setProgress(prev => ({ ...prev, error: eventData?.message || 'Agent error' }));
+          return true; // signal stop
+        }
+
+        return false;
+      };
+
+      while (!streamDone) {
         const { value, done: readerDone } = await reader.read();
-        done = readerDone;
+        streamDone = readerDone;
+
         if (value) {
-          const chunk = decoder.decode(value, { stream: true });
-          const events = chunk.split('\n\n');
+          buffer += decoder.decode(value, { stream: true });
+        }
 
-          for (const ev of events) {
-            if (!ev.trim()) continue;
+        // Process all complete SSE events in the buffer
+        let boundary: number;
+        while ((boundary = buffer.indexOf('\n\n')) !== -1) {
+          const rawEvent = buffer.slice(0, boundary);
+          buffer = buffer.slice(boundary + 2);
 
-            const line = ev.split('\n');
-            let eventType = '';
-            let eventData = '';
-            for (const l of line) {
-              if (l.startsWith('event: ')) eventType = l.replace('event: ', '');
-              if (l.startsWith('data: ')) {
-                const dataStr = l.replace('data: ', '');
-                try {
-                  eventData = JSON.parse(dataStr);
-                } catch (e) {
-                  eventData = dataStr;
-                }
-              }
-            }
+          if (!rawEvent.trim()) continue;
 
-            if (eventType === 'step_start') {
-              const data = eventData as any;
-              setProgress(prev => ({
-                ...prev,
-                [data.step === 0 ? 'moderator' : data.step === 1 ? 'planner' : data.step === 2 ? 'insight' : 'execution']: 'active'
-              }));
-            } else if (eventType === 'step_complete') {
-              const data = eventData as any;
-              setProgress(prev => {
-                const nextp = { ...prev };
-                const key = data.step === 0 ? 'moderator' : data.step === 1 ? 'planner' : data.step === 2 ? 'insight' : 'execution';
-                nextp[key] = 'done';
-                nextp.elapsedMs = { ...nextp.elapsedMs, [key]: data.duration };
-                return nextp;
-              });
-            } else if (eventType === 'done') {
-              const data = eventData as any;
-              setStatus('done');
-              router.push(`/plan/${data.report.id}`);
-            } else if (eventType === 'error') {
-              const data = eventData as any;
-              setStatus('error');
-              setProgress(prev => ({ ...prev, error: data.message || 'Agent error' }));
-              done = true;
-              break;
-            }
+          const shouldStop = processEvent(rawEvent);
+          if (shouldStop) {
+            streamDone = true;
+            break;
           }
         }
       }
